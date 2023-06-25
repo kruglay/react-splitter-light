@@ -1,0 +1,27 @@
+.splitter-container {
+	position: relative;
+	display: flex;
+	width: 100%;
+}
+
+.pane-container {
+	flex-shrink: 1;
+	flex-grow: 1;
+	overflow: hidden;
+}
+
+.runner-container {
+	position: absolute;
+	background-color: gainsboro;
+}
+
+.runner-horizontal {
+	cursor: col-resize;
+	height: 100%;
+}
+
+.runner-vertical {
+	cursor: row-resize;
+	width: 100%;
+}
+
