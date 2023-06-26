@@ -4,8 +4,8 @@ import {MODE} from './Splitter';
 export interface PaneProps {
 	children: ReactNode | ReactNode[];
 	size: number | string;
-	minSize: number;
-	maxSize: number;
+	minSize: number | string;
+	maxSize: number | string;
 	index: number;
 	paneRefs: MutableRefObject<HTMLDivElement[]>;
 	className?: string;

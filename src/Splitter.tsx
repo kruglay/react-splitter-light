@@ -55,15 +55,17 @@ export const Splitter = (props: SplitterProps) => {
 		splitterStyle
 	} = props;
 
+	let {minSizes, maxSizes} = props
+
 	const childrenCount = Children.count(children);
 
 	const initialSizes = useMemo(() => {
 		if (props.initialSizes) {
-			return  props.initialSizes;
+			return props.initialSizes;
 		} else {
 			let sum = 0;
 			const unit = 100 / childrenCount;
-			const res =  Array(childrenCount).fill(1).map((value, ind, arr) => {
+			const res = Array(childrenCount).fill(1).map((value, ind, arr) => {
 				if (ind === arr.length - 1) {
 					return 100 - sum;
 				}
@@ -73,7 +75,6 @@ export const Splitter = (props: SplitterProps) => {
 			return res;
 		}
 	}, [props.initialSizes]);
-
 
 
 	const fullSizeInUnits = initialSizes.reduce((acc, cur) => acc + cur, 0);
@@ -140,21 +141,43 @@ export const Splitter = (props: SplitterProps) => {
 		const minSizesPx: number[] = [];
 		const maxSizesPx: number[] = [];
 
-		const minSizes = typeof props.minSizes === 'number' ? Array(childrenCount).fill(props.minSizes) : props.minSizes;
-		const maxSizes = typeof props.maxSizes === 'number' ? Array(childrenCount).fill(props.maxSizes) : props.maxSizes;
+		if (minSizes && !Array.isArray(minSizes)) {
+			minSizes = Array(childrenCount).fill(minSizes)
+		}
+
+		if (maxSizes && !Array.isArray(maxSizes)) {
+			maxSizes = Array(childrenCount).fill(maxSizes)
+		}
 
 		Children.forEach(children, (child, ind) => {
 			const rate = initialSizes[ind] / fullSizeInUnits;
 			const containerWidth = refContainer.current?.getBoundingClientRect()?.[modeParams.size];
-			const minSizePx = containerWidth && minSizes?.[ind] != null ? (minSizes[ind] * containerWidth) / fullSizeInUnits : MIN_SIZE;
-			const maxSizePx = containerWidth && maxSizes?.[ind] != null ? (maxSizes[ind] * containerWidth) / fullSizeInUnits : Number.MAX_VALUE;
-			minSizesPx.push(minSizePx);
-			maxSizesPx.push(maxSizePx);
+			let paneMinSize = MIN_SIZE;
+			let paneMaxSize = Number.MAX_VALUE;
+
+			if (containerWidth && minSizes?.[ind] != null) {
+				if (typeof minSizes[ind] === 'number') {
+					paneMinSize = (minSizes[ind] * containerWidth) / fullSizeInUnits;
+				} else {
+					paneMinSize = minSizes[ind].replace('px', '');
+				}
+			}
+
+			if (containerWidth && maxSizes?.[ind] != null) {
+				if (typeof maxSizes[ind] === 'number') {
+					paneMinSize = (maxSizes[ind] * containerWidth) / fullSizeInUnits;
+				} else {
+					paneMinSize = maxSizes[ind].replace('px', '');
+				}
+			}
+
+			minSizesPx.push(paneMinSize);
+			maxSizesPx.push(paneMaxSize);
 			res.push(
 				<Pane
 					size={sizes?.[ind] ? sizes[ind] : `${rate * 100}%`}
-					minSize={minSizePx}
-					maxSize={maxSizePx}
+					minSize={paneMinSize}
+					maxSize={paneMaxSize}
 					paneRefs={paneRefs}
 					key={`sp_${ind}`}
 					mode={mode}
@@ -215,7 +238,7 @@ export const Splitter = (props: SplitterProps) => {
 			}
 		});
 		return res;
-	}, [children, fullSizeInUnits, props.maxSizes, props.minSizes, sizes, initialSizes]);
+	}, [children, fullSizeInUnits, maxSizes, minSizes, sizes, initialSizes]);
 
 	return (
 		<div
