@@ -11,8 +11,8 @@ export type MODE = 'vertical' | 'horizontal';
 export interface SplitterProps {
 	children: ReactNode | ReactNode[];
 	initialSizes?: number[];
-	minSizes?: number | number[];
-	maxSizes?: number | number[];
+	minSizes?: (number | string) | (number | string)[];
+	maxSizes?: (number | string) | (number | string)[];
 	runnerSize?: number | string;
 	onResize?: (sizesInUnits: number[], sizes: number[]) => void;
 	onDragStart?: (event: MouseEvent, indexes: number[]) => void;
@@ -127,9 +127,9 @@ export const Splitter = (props: SplitterProps) => {
 
 	useEffect(() => {
 		if (refContainer.current) {
-			const containerWidth = refContainer.current?.getBoundingClientRect()[modeParams.size];
+			const containerSize = refContainer.current?.getBoundingClientRect()[modeParams.size];
 			const curSizes = initialSizes.map((initialSize, ind) => {
-				const rate = containerWidth / fullSizeInUnits;
+				const rate = containerSize / fullSizeInUnits;
 				return rate * initialSize;
 			});
 			setSizes(curSizes);
@@ -140,34 +140,36 @@ export const Splitter = (props: SplitterProps) => {
 		const res: ReactNode[] = [];
 		const minSizesPx: number[] = [];
 		const maxSizesPx: number[] = [];
+		let minSizesArr: (number | string)[];
+		let maxSizesArr: (number | string)[];
 
-		if (minSizes && !Array.isArray(minSizes)) {
-			minSizes = Array(childrenCount).fill(minSizes)
+		if (minSizes) {
+			minSizesArr = Array.isArray(minSizes) ? minSizes : Array(childrenCount).fill(minSizes);
 		}
 
-		if (maxSizes && !Array.isArray(maxSizes)) {
-			maxSizes = Array(childrenCount).fill(maxSizes)
+		if (maxSizes) {
+			maxSizesArr = Array.isArray(maxSizes) ? maxSizes : Array(childrenCount).fill(maxSizes);
 		}
 
 		Children.forEach(children, (child, ind) => {
 			const rate = initialSizes[ind] / fullSizeInUnits;
-			const containerWidth = refContainer.current?.getBoundingClientRect()?.[modeParams.size];
+			const containerSize = refContainer.current?.getBoundingClientRect()?.[modeParams.size];
 			let paneMinSize = MIN_SIZE;
 			let paneMaxSize = Number.MAX_VALUE;
 
-			if (containerWidth && minSizes?.[ind] != null) {
-				if (typeof minSizes[ind] === 'number') {
-					paneMinSize = (minSizes[ind] * containerWidth) / fullSizeInUnits;
+			if (containerSize && minSizesArr?.[ind] != null) {
+				if (typeof minSizesArr[ind] === 'number') {
+					paneMinSize = ((minSizesArr[ind] as number) * containerSize) / fullSizeInUnits;
 				} else {
-					paneMinSize = minSizes[ind].replace('px', '');
+					paneMinSize = Number((minSizesArr[ind] as string).replace('px', ''));
 				}
 			}
 
-			if (containerWidth && maxSizes?.[ind] != null) {
-				if (typeof maxSizes[ind] === 'number') {
-					paneMinSize = (maxSizes[ind] * containerWidth) / fullSizeInUnits;
+			if (containerSize && maxSizesArr?.[ind] != null) {
+				if (typeof maxSizesArr[ind] === 'number') {
+					paneMaxSize = ((maxSizesArr[ind] as number) * containerSize) / fullSizeInUnits;
 				} else {
-					paneMinSize = maxSizes[ind].replace('px', '');
+					paneMaxSize = Number((maxSizesArr[ind] as string).replace('px', ''));
 				}
 			}
 
