@@ -1,4 +1,12 @@
-import React, {CSSProperties, Dispatch, MutableRefObject, RefObject, SetStateAction, useEffect, useRef} from 'react';
+import React, {
+	CSSProperties,
+	Dispatch,
+	MutableRefObject,
+	RefObject,
+	SetStateAction,
+	useEffect,
+	useRef,
+} from 'react';
 import {RectParams, SplitterProps} from './Splitter';
 
 export interface RunnerProps {
@@ -40,7 +48,8 @@ export const Runner = (props: RunnerProps) => {
 		className
 	} = props;
 
-	const runnerRef = useRef<HTMLDivElement>(null);
+	const runnerRef = useRef<HTMLDivElement | null>(null);
+	const insideBorders = useRef<boolean>(true);
 
 	useEffect(() => {
 		if (runnerRef.current) {
@@ -61,55 +70,65 @@ export const Runner = (props: RunnerProps) => {
 
 			const mouseMove = (event: MouseEvent) => {
 				if (refContainer.current) {
-					const offset = event[modeParams.axis] - refContainer.current.getBoundingClientRect()[modeParams.offset];
+					const splitterContainerOffset = refContainer.current.getBoundingClientRect()[modeParams.offset];
+					const positionInSplitterContainer = event[modeParams.axis] - splitterContainerOffset;
 					const position = event[modeParams.axis];
+					const pane1Offset = pane1.getBoundingClientRect()[modeParams.offset];
+					const flexBasis = discrete ? Math.round((positionInSplitterContainer) / (Number(discrete) * rate)) * (Number(discrete) * rate) - (pane1Offset - splitterContainerOffset) : position - pane1Offset;
 
-					if (offset >= minBorder && offset <= maxBorder) {
-						runner.style[modeParams.offset] = `${offset - runner.getBoundingClientRect()[modeParams.size] / 2}px`;
-						const pane1Offset = pane1.getBoundingClientRect()[modeParams.offset];
-						const flexBasis = discrete ? Math.round((position - pane1Offset) / (Number(discrete) * rate)) * (Number(discrete) * rate) : position - pane1Offset;
-						pane1.style.flexBasis = `${flexBasis}px`;
-						pane2.style.flexBasis = `${pairSum - (flexBasis)}px`;
+					if (positionInSplitterContainer >= minBorder && positionInSplitterContainer <= maxBorder) {
+						runner.style[modeParams.offset] = `${positionInSplitterContainer - runner.getBoundingClientRect()[modeParams.size] / 2}px`;
+						if (!discrete || (flexBasis + pane1Offset - splitterContainerOffset >= minBorder && flexBasis + pane1Offset - splitterContainerOffset <= maxBorder)) {
+							pane1.style.flexBasis = `${flexBasis}px`;
+							pane2.style.flexBasis = `${pairSum - (flexBasis)}px`;
 
-						let sum = 0;
-						const sizes: number[] = [];
-						const sizesInUnits = paneRefs.current.map((pane, ind, arr) => {
-							const size = pane.getBoundingClientRect()[modeParams.size];
-							sizes.push(size);
-							if (ind === arr.length - 1) {
-								return fullSizeInUnits - sum;
-							}
-							const sizeInUnits = (size * fullSizeInUnits) / containerSize;
-							sum += sizeInUnits;
-							return sizeInUnits;
-						});
-						onResize && onResize(sizesInUnits, sizes);
+							let sum = 0;
+							const sizes: number[] = [];
+							const sizesInUnits = paneRefs.current.map((pane, ind, arr) => {
+								const size = pane.getBoundingClientRect()[modeParams.size];
+								sizes.push(size);
+								if (ind === arr.length - 1) {
+									return fullSizeInUnits - sum;
+								}
+								const sizeInUnits = (size * fullSizeInUnits) / containerSize;
+								sum += sizeInUnits;
+								return sizeInUnits;
+							});
+							insideBorders.current = true;
+							onResize && onResize(sizesInUnits, sizes);
+						} else {
+							let runnerOffset = Math.max(positionInSplitterContainer, minBorder);
+							if (positionInSplitterContainer >= maxBorder) runnerOffset = maxBorder;
+							runner.style[modeParams.offset] = `${runnerOffset - runner.getBoundingClientRect()[modeParams.size] / 2}px`;
+						}
 					}
 				}
 			};
 
 			const mouseUp = (event: MouseEvent) => {
-				document.removeEventListener('mouseup', mouseUp);
-				document.removeEventListener('mousemove', mouseMove);
-				if (paneRefs.current) {
-					setSizes((prev) => {
-						const pane1 = paneRefs.current[index1];
-						const pane2 = paneRefs.current[index2];
-						const newSizes = [...prev];
-						if (pane1 && pane2) {
-							newSizes[index1] = pane1.getBoundingClientRect()[modeParams.size];
-							newSizes[index2] = pane2.getBoundingClientRect()[modeParams.size];
-						}
-						return newSizes;
-					});
-					onDragEnd?.(event, [index1, index2]);
+				if (event.button === 0) {
+					document.removeEventListener('mouseup', mouseUp);
+					document.removeEventListener('mousemove', mouseMove);
+					if (paneRefs.current) {
+						setSizes((prev) => {
+							const pane1 = paneRefs.current[index1];
+							const pane2 = paneRefs.current[index2];
+							const newSizes = [...prev];
+							if (pane1 && pane2) {
+								newSizes[index1] = pane1.getBoundingClientRect()[modeParams.size];
+								newSizes[index2] = pane2.getBoundingClientRect()[modeParams.size];
+							}
+							return newSizes;
+						});
+						onDragEnd?.(event, [index1, index2]);
+					}
 				}
 			};
 
 			const mouseDown = (event: MouseEvent) => {
 				if (event.button === 0) {
-					event.preventDefault();
 					onDragStart?.(event, [index1, index2]);
+					event.preventDefault();
 					document.addEventListener('mouseup', mouseUp);
 					document.addEventListener('mousemove', mouseMove);
 				}
@@ -129,10 +148,15 @@ export const Runner = (props: RunnerProps) => {
 	return (
 		<div
 			className={`runner-container ${className}`}
-			ref={runnerRef}
+			ref={(element) => {
+				if (element) {
+					element.style[modeParams.offset] = `${startAt - element.getBoundingClientRect()?.[modeParams.size]}px`;
+					runnerRef.current = element;
+				}
+			}}
 			style={{
 				...style,
-				[modeParams.offset]: startAt - (runnerRef.current?.getBoundingClientRect()?.[modeParams.size] || 0) / 2,
+				[modeParams.offset]: startAt,
 			}}
 		/>
 	);

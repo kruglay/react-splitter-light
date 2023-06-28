@@ -61,7 +61,7 @@ export const Splitter = (props: SplitterProps) => {
 
 	const initialSizes = useMemo(() => {
 		if (props.initialSizes) {
-			return props.initialSizes;
+			return props.initialSizes.slice(0, childrenCount);
 		} else {
 			let sum = 0;
 			const unit = 100 / childrenCount;
@@ -77,7 +77,7 @@ export const Splitter = (props: SplitterProps) => {
 	}, [props.initialSizes]);
 
 
-	const fullSizeInUnits = initialSizes.reduce((acc, cur) => acc + cur, 0);
+	const fullSizeInUnits = initialSizes.reduce((prev, cur) => prev + cur, 0);
 
 	const modeParams = useMemo<RectParams>(() => {
 		const res: RectParams = {
@@ -123,7 +123,7 @@ export const Splitter = (props: SplitterProps) => {
 			});
 		}
 		return () => observer?.disconnect();
-	}, []);
+	}, [modeParams]);
 
 	useEffect(() => {
 		if (refContainer.current) {
@@ -134,7 +134,7 @@ export const Splitter = (props: SplitterProps) => {
 			});
 			setSizes(curSizes);
 		}
-	}, [initialSizes]);
+	}, [initialSizes, modeParams]);
 
 	const content = useMemo(() => {
 		const res: ReactNode[] = [];
@@ -143,11 +143,11 @@ export const Splitter = (props: SplitterProps) => {
 		let minSizesArr: (number | string)[];
 		let maxSizesArr: (number | string)[];
 
-		if (minSizes) {
+		if (minSizes != null) {
 			minSizesArr = Array.isArray(minSizes) ? minSizes : Array(childrenCount).fill(minSizes);
 		}
 
-		if (maxSizes) {
+		if (maxSizes != null) {
 			maxSizesArr = Array.isArray(maxSizes) ? maxSizes : Array(childrenCount).fill(maxSizes);
 		}
 
@@ -177,7 +177,7 @@ export const Splitter = (props: SplitterProps) => {
 			maxSizesPx.push(paneMaxSize);
 			res.push(
 				<Pane
-					size={sizes?.[ind] ? sizes[ind] : `${rate * 100}%`}
+					size={sizes?.[ind] != null ? sizes[ind] : `${rate * 100}%`}
 					minSize={paneMinSize}
 					maxSize={paneMaxSize}
 					paneRefs={paneRefs}
@@ -240,7 +240,7 @@ export const Splitter = (props: SplitterProps) => {
 			}
 		});
 		return res;
-	}, [children, fullSizeInUnits, maxSizes, minSizes, sizes, initialSizes]);
+	}, [children, fullSizeInUnits, maxSizes, minSizes, sizes, initialSizes, modeParams]);
 
 	return (
 		<div
@@ -248,7 +248,6 @@ export const Splitter = (props: SplitterProps) => {
 			ref={refContainer}
 			style={{
 				flexDirection: mode === 'horizontal' ? 'row' : 'column',
-				[modeParams.size]: '100%',
 				...splitterStyle
 			}}>
 			{content}
