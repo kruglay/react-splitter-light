@@ -22,7 +22,7 @@ npm install react-splitter-light
 yarn add react-splitter-light
 ````
 
-## Example Usage
+## Example Usage 
 
 ```jsx
 import React, {useState} from 'react';
@@ -49,6 +49,8 @@ function App () {
 ```
 
 Apply **height: 100%** to elements within the Splitter component to ensure they fully occupy the available space within their respective panels.
+
+#### Here you can find [demo](https://kruglay.github.io/rsl-demo/)
 
 ## props
 

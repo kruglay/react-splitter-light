@@ -149,14 +149,14 @@ export const Runner = (props: RunnerProps) => {
 		<div
 			className={`runner-container ${className}`}
 			ref={(element) => {
-				if (element) {
-					element.style[modeParams.offset] = `${startAt - element.getBoundingClientRect()?.[modeParams.size]}px`;
+				if (element && !runnerRef.current) {
+					element.style[modeParams.offset] = `${startAt - element.getBoundingClientRect()?.[modeParams.size] / 2}px`;
 					runnerRef.current = element;
 				}
 			}}
 			style={{
 				...style,
-				[modeParams.offset]: startAt,
+				[modeParams.offset]: startAt - (runnerRef.current?.getBoundingClientRect()?.[modeParams.size] || 0) / 2,
 			}}
 		/>
 	);

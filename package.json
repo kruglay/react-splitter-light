@@ -1,6 +1,6 @@
 {
   "name": "react-splitter-light",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A lightweight React component for creating adjustable split views with no extra dependencies.",
   "files": ["dist"],
   "main": "./dist/index.js",
